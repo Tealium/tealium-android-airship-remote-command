@@ -75,19 +75,6 @@ class AirshipRemoteCommand(
 
                         airshipCommand.setPushNotificationOptions(options, channelId)
                     }
-//                    AirshipConstants.Commands.SET_FOREGROUND_PRESENTATION_OPTIONS -> {
-//                        val options = payload.getJSONArray(AirshipConstants.Keys.FOREGROUND_PRESENTATION_OPTIONS)
-//
-//                        airshipCommand.foregroundPresentationOptions = options
-//                    }
-//                    AirshipConstants.Commands.SET_BADGE_NUMBER -> {
-//                        val badgeNumber = payload.getInt(AirshipConstants.Keys.BADGE_NUMBER)
-//
-//                        airshipCommand.badgeNumber = badgeNumber
-//                    }
-//                    AirshipConstants.Commands.RESET_BADGE_NUMBER -> {
-//                        airshipCommand.resetBadgeNumber()
-//                    }
                     AirshipConstants.Commands.SET_QUIET_TIME_START -> {
                         val quietTime = payload.getJSONObject(AirshipConstants.Keys.QUIET)
 
@@ -151,17 +138,6 @@ class AirshipRemoteCommand(
 
                         airshipCommand.setAttributes(attributes)
                     }
-//                    AirshipConstants.Commands.SET_MESSAGE_CENTER_TITLE -> {
-//                        val title = payload.getString(AirshipConstants.Keys.MESSAGE_CENTER_TITLE)
-//
-//                        airshipCommand.messageCenterTitle = title
-//                    }
-//                    AirshipConstants.Commands.SET_MESSAGE_CENTER_STYLE -> {
-//                        val style = payload.getJSONObject(AirshipConstants.Keys.MESSAGE_CENTER_STYLE)
-//
-//                        airshipCommand.setMessageCenterStyle(style)
-//                    }
-                    // No props required
                     AirshipConstants.Commands.ENABLE_ANALYTICS -> {
                         airshipCommand.analyticsEnabled = true
                     }
