@@ -1,10 +1,10 @@
-# tealium-android-airship-remote-command
+# Tealium Airship for Android
 
 [![License](https://img.shields.io/badge/license-Proprietary-blue.svg?style=flat
             )](https://github.com/Tealium/tealium-java/blob/master/LICENSE.txt)
 [![Platform](https://img.shields.io/badge/Platform-Android-lightgrey.svg?style=flat
              )](https://developer.android.com/guide/index.html)
-[![Language](https://img.shields.io/badge/Language-Java-orange.svg?style=flat
+[![Language](https://img.shields.io/badge/Language-Kotlin-orange.svg?style=flat
              )](https://developer.android.com/reference/packages.html)
 
 ## Documentation
@@ -18,4 +18,4 @@ Use of this software is subject to the terms and conditions of the license agree
 
 
 ---
-Copyright (C) 2012-2019, Tealium Inc.
+Copyright (C) 2012-2021, Tealium Inc.
