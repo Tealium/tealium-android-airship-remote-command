@@ -33,7 +33,7 @@ class FirstFragment : Fragment() {
         }
 
         view.findViewById<Button>(R.id.button_track_view).setOnClickListener {
-            TealiumHelper.trackView("screen_view", mapOf())
+            TealiumHelper.trackView("screen_view", mapOf("screen_name" to "test_screen"))
         }
 
         view.findViewById<Button>(R.id.button_track_event).setOnClickListener {
