@@ -1,0 +1,3 @@
+include ':airship'
+include ':app'
+rootProject.name = "TealiumAirship"

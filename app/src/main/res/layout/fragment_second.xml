@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".OptionsFragment">
+
+    <TextView
+        android:id="@+id/textView_analytics"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/analytics_enabled"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.224"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.093" />
+
+    <RadioGroup
+        android:id="@+id/radioGroup_analytics"
+        android:layout_width="204dp"
+        android:layout_height="54dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toEndOf="@+id/textView_analytics"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.077">
+
+        <RadioButton
+            android:id="@+id/analytics_enabled"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="@string/enabled" />
+
+        <RadioButton
+            android:id="@+id/analytics_disabled"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="@string/disabled" />
+    </RadioGroup>
+
+    <TextView
+        android:id="@+id/textView_location"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/location_enabled"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.233"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView_analytics"
+        app:layout_constraintVertical_bias="0.056" />
+
+    <RadioGroup
+        android:id="@+id/radioGroup_location"
+        android:layout_width="204dp"
+        android:layout_height="54dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toEndOf="@+id/textView_location"
+        app:layout_constraintTop_toBottomOf="@+id/radioGroup_analytics"
+        app:layout_constraintVertical_bias="0.0">
+
+        <RadioButton
+            android:id="@+id/location_enabled"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="@string/enabled" />
+
+        <RadioButton
+            android:id="@+id/location_disabled"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="@string/disabled" />
+    </RadioGroup>
+
+    <TextView
+        android:id="@+id/textView_messaging"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/messaging"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.191"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView_location"
+        app:layout_constraintVertical_bias="0.051" />
+
+    <RadioGroup
+        android:id="@+id/radioGroup_messaging"
+        android:layout_width="204dp"
+        android:layout_height="54dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toEndOf="@+id/textView_messaging"
+        app:layout_constraintTop_toBottomOf="@+id/radioGroup_location"
+        app:layout_constraintVertical_bias="0.0">
+
+        <RadioButton
+            android:id="@+id/messaging_enabled"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="@string/enabled" />
+
+        <RadioButton
+            android:id="@+id/messaging_disabled"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="@string/disabled" />
+    </RadioGroup>
+
+    <TextView
+        android:id="@+id/textView_push"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/push_enabled"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.293"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView_messaging"
+        app:layout_constraintVertical_bias="0.057" />
+
+    <RadioGroup
+        android:id="@+id/radioGroup_push"
+        android:layout_width="204dp"
+        android:layout_height="54dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toEndOf="@+id/textView_push"
+        app:layout_constraintTop_toBottomOf="@+id/radioGroup_messaging"
+        app:layout_constraintVertical_bias="0.0">
+
+        <RadioButton
+            android:id="@+id/push_enabled"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="@string/enabled" />
+
+        <RadioButton
+            android:id="@+id/push_disabled"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="@string/disabled" />
+    </RadioGroup>
+
+    <Button
+        android:id="@+id/button_second"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/back"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.953" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

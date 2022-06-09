@@ -1,0 +1,48 @@
+{
+  "config": {
+    "developmentAppKey": "<replace>",
+    "developmentAppSecret": "<replace>",
+    "productionAppKey": "",
+    "productionAppSecret": "",
+    "site": "EU",
+    "isInProduction": false,
+    "defaultChannel": "Default"
+  },
+  "mappings": {
+    "tealium_event": "event_name",
+    "screen_name": "screen_name",
+    "event_value": "event_value",
+    "event_props": "event_properties",
+    "string_prop": "event.string_prop",
+    "int_prop": "event.int_prop",
+    "bool_prop": "event.bool_prop",
+    "email": "named_user_identifier",
+    "group": "tag_group",
+    "user_tags": "named_user_tags",
+    "channel_tag": "channel_tag",
+    "channel_tags": "channel_tags",
+    "channel_id": "channel_id",
+    "push_opts": "push_notification_options",
+    "google_adid": "google_adid",
+    "google_limit_ad_tracking": "google_limit_ad_tracking"
+  },
+  "commands" : {
+    "launch": "initialize",
+    "click" : "trackevent",
+    "screen_view": "trackscreenview",
+    "enable_analytics": "enableanalytics,enableadvertisingidentifiers",
+    "disable_analytics": "disableanalytics",
+    "enable_location": "enablelocation",
+    "disable_location": "disablelocation",
+    "enable_messaging": "enableinappmessaging",
+    "disable_messaging": "disableinappmessaging",
+    "enable_push": "enableuserpushnotifications",
+    "disable_push": "disableuserpushnotifications",
+    "login": "setnameduser",
+    "add_tag": "addtag",
+    "remove_tag": "removetag",
+    "add_tag_group": "addtaggroup",
+    "remove_tag_group": "removetaggroup",
+    "show_messages": "displaymessagecenter"
+  }
+}
