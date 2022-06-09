@@ -17,7 +17,7 @@ class AirshipRemoteCommand(
     commandName: String = DEFAULT_COMMAND_NAME,
     commandDescription: String = DEFAULT_COMMAND_DESCRIPTION,
     private val airshipCommand: AirshipCommand = AirshipInstance()
-): RemoteCommand(commandName, commandDescription) {
+): RemoteCommand(commandName, commandDescription, BuildConfig.TEALIUM_AIRSHIIP_VERSION) {
 
     public override fun onInvoke(response: Response?) {
         response?.requestPayload?.let { payload ->
@@ -27,14 +27,14 @@ class AirshipRemoteCommand(
         response?.send()
     }
 
-    internal fun splitCommands(payload: JSONObject): Array<String> {
+    private fun splitCommands(payload: JSONObject): Array<String> {
         val commandString = payload.optString(COMMAND_NAME, "")
         return commandString.split(SEPARATOR).map {
-            it.trim().toLowerCase(Locale.ROOT)
+            it.trim().lowercase(Locale.ROOT)
         }.toTypedArray()
     }
 
-    internal fun parseCommands(commands: Array<String>, payload: JSONObject) {
+    private fun parseCommands(commands: Array<String>, payload: JSONObject) {
         commands.forEach { command ->
             try {
                 Log.d(BuildConfig.TAG, "Handling command: $command")
