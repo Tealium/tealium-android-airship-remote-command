@@ -41,7 +41,7 @@ android {
 dependencies {
 
     // Tealium
-    implementation "com.tealium:remotecommands:1.0.1"
+    api "com.tealium:remotecommands:1.0.1"
 
     // Airship
     api "com.urbanairship.android:urbanairship-location:$airship_version"

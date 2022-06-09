@@ -30,7 +30,7 @@ class AirshipRemoteCommand(
     private fun splitCommands(payload: JSONObject): Array<String> {
         val commandString = payload.optString(COMMAND_NAME, "")
         return commandString.split(SEPARATOR).map {
-            it.trim().toLowerCase(Locale.ROOT)
+            it.trim().lowercase(Locale.ROOT)
         }.toTypedArray()
     }
 
