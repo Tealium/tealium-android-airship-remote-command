@@ -17,7 +17,7 @@ class AirshipRemoteCommand(
     commandName: String = DEFAULT_COMMAND_NAME,
     commandDescription: String = DEFAULT_COMMAND_DESCRIPTION,
     private val airshipCommand: AirshipCommand = AirshipInstance()
-): RemoteCommand(commandName, commandDescription, BuildConfig.TEALIUM_AIRSHIIP_VERSION) {
+): RemoteCommand(commandName, commandDescription, BuildConfig.TEALIUM_AIRSHIP_VERSION) {
 
     public override fun onInvoke(response: Response?) {
         response?.requestPayload?.let { payload ->
