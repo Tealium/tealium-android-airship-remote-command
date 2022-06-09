@@ -382,7 +382,7 @@ class AirshipInstance : AirshipCommand {
         MessageCenter.shared().showMessageCenter(messageId);
     }
 
-    internal fun JSONArray.toStringList(): List<String> {
+    private fun JSONArray.toStringList(): List<String> {
         val list = mutableListOf<String>()
         for (i in 0 until this.length()) {
             val item = this.optString(i)
@@ -393,7 +393,7 @@ class AirshipInstance : AirshipCommand {
         return list.toList()
     }
 
-    internal fun JSONObject.toStringMap(): Map<String, String> {
+    private fun JSONObject.toStringMap(): Map<String, String> {
         val map = mutableMapOf<String, String>()
         for (key in this.keys()) {
             val item = this.optString(key)
@@ -404,7 +404,7 @@ class AirshipInstance : AirshipCommand {
         return map.toMap()
     }
 
-    internal fun Collection<String>.toJSONArray(): JSONArray {
+    private fun Collection<String>.toJSONArray(): JSONArray {
         val json = JSONArray()
         this.forEach {
             json.put(it)
