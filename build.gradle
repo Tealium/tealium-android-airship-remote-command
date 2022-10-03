@@ -2,7 +2,7 @@
 buildscript {
     ext.kotlin_version = "1.5.30"
     ext.airship_version = "[16.5,17)"
-    ext.tealium_airship_version = "1.1.0"
+    ext.tealium_airship_version = "1.1.1"
 
     repositories {
         google()
