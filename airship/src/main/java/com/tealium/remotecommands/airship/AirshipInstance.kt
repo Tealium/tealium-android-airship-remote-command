@@ -1,6 +1,7 @@
 package com.tealium.remotecommands.airship
 
 import android.app.Application
+import android.net.Uri
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import com.urbanairship.AirshipConfigOptions
@@ -10,7 +11,6 @@ import com.urbanairship.analytics.CustomEvent
 import com.urbanairship.automation.InAppAutomation
 import com.urbanairship.channel.TagGroupsEditor
 import com.urbanairship.json.JsonMap
-import com.urbanairship.location.AirshipLocationManager
 import com.urbanairship.messagecenter.MessageCenter
 import com.urbanairship.push.notifications.NotificationChannelCompat
 import org.json.JSONArray
@@ -19,8 +19,9 @@ import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
+import androidx.core.net.toUri
 
-@Suppress("DEPRECATION")
+
 class AirshipInstance : AirshipCommand {
 
     private val quietTimeDateFormatter = SimpleDateFormat("hh:mm", Locale.US)
@@ -28,8 +29,14 @@ class AirshipInstance : AirshipCommand {
     private var defaultChannelName: String? = null
 
     override fun initialize(application: Application, config: JSONObject) {
-
-        UAirship.takeOff(application, parseOptions(config))
+        // UAirship.takeOff() must be called on the main thread
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+            UAirship.takeOff(application, parseOptions(config))
+        } else {
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                UAirship.takeOff(application, parseOptions(config))
+            }
+        }
     }
 
     internal fun parseOptions(config: JSONObject): AirshipConfigOptions {
@@ -60,12 +67,21 @@ class AirshipInstance : AirshipCommand {
             options.setSite(site)
         }
 
-        if (config.has(AirshipConstants.Config.IS_DATA_COLLECTION_ENABLED)) {
+        if (config.has(AirshipConstants.Config.ENABLED_FEATURES)) {
+            val enabledFeaturesArray = config.getJSONArray(AirshipConstants.Config.ENABLED_FEATURES)
+            val features = AirshipConstants.PrivacyFeatures.fromJsonArray(enabledFeaturesArray)
+            options.setEnabledFeatures(*features)
+        } else if (config.has(AirshipConstants.Config.IS_DATA_COLLECTION_ENABLED)) {
+            // Backward compatibility
             if (config.optBoolean(AirshipConstants.Config.IS_DATA_COLLECTION_ENABLED)) {
-                options.enabledFeatures = PrivacyManager.FEATURE_ALL
+                options.enabledFeatures = PrivacyManager.Feature.ALL
             } else {
-                options.enabledFeatures = PrivacyManager.FEATURE_NONE
+                options.enabledFeatures = PrivacyManager.Feature.NONE
             }
+        }
+
+        if (config.has(AirshipConstants.Config.RESET_ENABLED_FEATURES)) {
+            options.setResetEnabledFeatures(config.optBoolean(AirshipConstants.Config.RESET_ENABLED_FEATURES))
         }
 
         if (config.has(AirshipConstants.Config.IS_IN_PRODUCTION)) {
@@ -73,25 +89,53 @@ class AirshipInstance : AirshipCommand {
             options.setInProduction(isInProduction)
         }
 
+        if (config.has(AirshipConstants.Config.INITIAL_CONFIG_URL)) {
+            val initialConfigUrl = config.optString(AirshipConstants.Config.INITIAL_CONFIG_URL)
+            if (initialConfigUrl.isNotEmpty()) {
+                options.setInitialConfigUrl(initialConfigUrl)
+            }
+        }
+
+        if (config.has(AirshipConstants.Config.REQUIRE_INITIAL_REMOTE_CONFIG_ENABLED)) {
+            val requireInitialRemoteConfig = config.optBoolean(AirshipConstants.Config.REQUIRE_INITIAL_REMOTE_CONFIG_ENABLED) 
+            options.setRequireInitialRemoteConfigEnabled(requireInitialRemoteConfig)
+        }
+
+        if (config.has(AirshipConstants.Config.LOG_LEVEL)) {
+            val logLevel = parseLogLevel(config.optString(AirshipConstants.Config.LOG_LEVEL))
+            if (logLevel != null) {
+                options.setLogLevel(logLevel)
+            } else {
+                Log.w(BuildConfig.TAG, "Invalid logLevel: '${config.optString(AirshipConstants.Config.LOG_LEVEL)}'. Using ERROR as default. Valid values: trace, debug, info, warn, error, none")
+                options.setLogLevel(Log.ERROR)
+            }
+        }
+
         if (config.has(AirshipConstants.Config.DEVELOPMENT_LOG_LEVEL)) {
-            val developmentLogLevel =
-                config.optString(AirshipConstants.Config.DEVELOPMENT_LOG_LEVEL)
-            options.setDevelopmentLogLevel(parseLogLevel(developmentLogLevel))
+            val developmentLogLevel = config.optString(AirshipConstants.Config.DEVELOPMENT_LOG_LEVEL)
+            val logLevel = parseLogLevel(developmentLogLevel)
+            if (logLevel != null) {
+                options.setDevelopmentLogLevel(logLevel)
+            } else {
+                Log.w(BuildConfig.TAG, "Invalid developmentLogLevel: '$developmentLogLevel'. Using ERROR as default. Valid values: trace, debug, info, warn, error, none")
+                options.setDevelopmentLogLevel(Log.ERROR)
+            }
         }
 
         if (config.has(AirshipConstants.Config.PRODUCTION_LOG_LEVEL)) {
             val productionLogLevel = config.optString(AirshipConstants.Config.PRODUCTION_LOG_LEVEL)
-            options.setProductionLogLevel(parseLogLevel(productionLogLevel))
+            val logLevel = parseLogLevel(productionLogLevel)
+            if (logLevel != null) {
+                options.setProductionLogLevel(logLevel)
+            } else {
+                Log.w(BuildConfig.TAG, "Invalid productionLogLevel: '$productionLogLevel'. Using ERROR as default. Valid values: trace, debug, info, warn, error, none")
+                options.setProductionLogLevel(Log.ERROR)
+            }
         }
 
         if (config.has(AirshipConstants.Config.IS_ANALYTICS_ENABLED)) {
-            if (config.optBoolean(AirshipConstants.Config.IS_ANALYTICS_ENABLED)) {
-                options.enabledFeatures =
-                    options.enabledFeatures or PrivacyManager.FEATURE_ANALYTICS
-            } else {
-                options.enabledFeatures =
-                    options.enabledFeatures xor PrivacyManager.FEATURE_ANALYTICS
-            }
+            val analyticsEnabled = config.optBoolean(AirshipConstants.Config.IS_ANALYTICS_ENABLED)
+            options.setAnalyticsEnabled(analyticsEnabled)
         }
 
         if (config.has(AirshipConstants.Config.DEFAULT_CHANNEL)) {
@@ -100,18 +144,100 @@ class AirshipInstance : AirshipCommand {
             defaultChannelName = defaultChannel
         }
 
+        if (config.has(AirshipConstants.Config.CHANNEL_CREATION_DELAY_ENABLED)) {
+            val channelCreationDelayEnabled = config.optBoolean(AirshipConstants.Config.CHANNEL_CREATION_DELAY_ENABLED) 
+            options.setChannelCreationDelayEnabled(channelCreationDelayEnabled)
+        }
+
+        if (config.has(AirshipConstants.Config.ALLOWED_TRANSPORTS)) {
+            val allowedTransportsArray = config.getJSONArray(AirshipConstants.Config.ALLOWED_TRANSPORTS)
+            val transports = allowedTransportsArray.toStringList().toTypedArray() 
+            options.setAllowedTransports(transports)
+        }
+
+        if (config.has(AirshipConstants.Config.FCM_FIREBASE_APP_NAME)) {
+            val fcmFirebaseAppName = config.optString(AirshipConstants.Config.FCM_FIREBASE_APP_NAME)
+            if (fcmFirebaseAppName.isNotEmpty()) {
+                options.setFcmFirebaseAppName(fcmFirebaseAppName)
+            }
+        }
+
+        if (config.has(AirshipConstants.Config.APP_STORE_URI)) {
+            val appStoreUriString = config.optString(AirshipConstants.Config.APP_STORE_URI)
+            if (appStoreUriString.isNotEmpty()) {
+                try {
+                    val appStoreUri = appStoreUriString.toUri()
+                    options.setAppStoreUri(appStoreUri)
+                } catch (e: Exception) {
+                    Log.w(BuildConfig.TAG, "Invalid app store URI: $appStoreUriString", e)
+                }
+            }
+        }
+
+        if (config.has(AirshipConstants.Config.AUTO_PAUSE_IN_APP_AUTOMATION_ON_LAUNCH)) {
+            val autoPauseInAppAutomationOnLaunch = config.optBoolean(AirshipConstants.Config.AUTO_PAUSE_IN_APP_AUTOMATION_ON_LAUNCH) 
+            options.setAutoPauseInAppAutomationOnLaunch(autoPauseInAppAutomationOnLaunch)
+        }
+
+        if (config.has(AirshipConstants.Config.BACKGROUND_REPORTING_INTERVAL_MS)) {
+            val backgroundReportingIntervalMS = config.optLong(AirshipConstants.Config.BACKGROUND_REPORTING_INTERVAL_MS)
+            if (backgroundReportingIntervalMS > 0) {
+                options.setBackgroundReportingIntervalMS(backgroundReportingIntervalMS)
+            }
+        }
+
+        if (config.has(AirshipConstants.Config.CHANNEL_CAPTURE_ENABLED)) {
+            val channelCaptureEnabled = config.optBoolean(AirshipConstants.Config.CHANNEL_CAPTURE_ENABLED)
+            options.setChannelCaptureEnabled(channelCaptureEnabled)
+        }
+
+        if (config.has(AirshipConstants.Config.EXTENDED_BROADCASTS_ENABLED)) {
+            val extendedBroadcastsEnabled = config.optBoolean(AirshipConstants.Config.EXTENDED_BROADCASTS_ENABLED)
+            options.setExtendedBroadcastsEnabled(extendedBroadcastsEnabled)
+        }
+
+        if (config.has(AirshipConstants.Config.URL_ALLOW_LIST)) {
+            val urlAllowListArray = config.optJSONArray(AirshipConstants.Config.URL_ALLOW_LIST)
+            if (urlAllowListArray != null && urlAllowListArray.length() > 0) {
+                val urlAllowList = Array(urlAllowListArray.length()) { i ->
+                    urlAllowListArray.optString(i)
+                }
+                options.setUrlAllowList(urlAllowList)
+            }
+        }
+
+        if (config.has(AirshipConstants.Config.URL_ALLOW_LIST_SCOPE_JAVASCRIPT_INTERFACE)) {
+            val urlAllowListArray = config.optJSONArray(AirshipConstants.Config.URL_ALLOW_LIST_SCOPE_JAVASCRIPT_INTERFACE)
+            if (urlAllowListArray != null && urlAllowListArray.length() > 0) {
+                val urlAllowList = Array(urlAllowListArray.length()) { i ->
+                    urlAllowListArray.optString(i)
+                }
+                options.setUrlAllowListScopeJavaScriptInterface(urlAllowList)
+            }
+        }
+
+        if (config.has(AirshipConstants.Config.URL_ALLOW_LIST_SCOPE_OPEN_URL)) {
+            val urlAllowListArray = config.optJSONArray(AirshipConstants.Config.URL_ALLOW_LIST_SCOPE_OPEN_URL)
+            if (urlAllowListArray != null && urlAllowListArray.length() > 0) {
+                val urlAllowList = Array(urlAllowListArray.length()) { i ->
+                    urlAllowListArray.optString(i)
+                }
+                options.setUrlAllowListScopeOpenUrl(urlAllowList)
+            }
+        }
+
         return options.build()
     }
 
-    internal fun parseLogLevel(level: String): Int {
-        return when (level.toLowerCase(Locale.ROOT)) {
+    internal fun parseLogLevel(level: String): Int? {
+        return when (level.lowercase(Locale.ROOT)) {
             "trace" -> Log.VERBOSE
             "debug" -> Log.DEBUG
             "info" -> Log.INFO
             "warn" -> Log.WARN
             "error" -> Log.ERROR
             "none" -> Int.MAX_VALUE
-            else -> Log.ERROR
+            else -> null
         }
     }
 
@@ -124,7 +250,7 @@ class AirshipInstance : AirshipCommand {
         }
 
     override fun setNamedUserTags(group: String, tags: JSONArray) {
-        val editor = UAirship.shared().namedUser.editTagGroups()
+        val editor = UAirship.shared().contact.editTagGroups()
         editor.setTags(group, tags.toStringList().toMutableSet())
         editor.apply()
     }
@@ -134,13 +260,14 @@ class AirshipInstance : AirshipCommand {
     }
 
     override fun removeTag(tagName: String) {
-        UAirship.shared().channel.tags =
-            UAirship.shared().channel.tags.apply { this.remove(tagName) }
+        val currentTags = UAirship.shared().channel.tags.toMutableSet()
+        currentTags.remove(tagName)
+        UAirship.shared().channel.tags = currentTags
     }
 
     override fun addTagGroup(group: String, tags: JSONArray, type: AirshipConstants.TagType) {
         val editor: TagGroupsEditor = when (type) {
-            AirshipConstants.TagType.NAMED_USER_TAG -> UAirship.shared().namedUser.editTagGroups()
+            AirshipConstants.TagType.NAMED_USER_TAG -> UAirship.shared().contact.editTagGroups()
             AirshipConstants.TagType.CHANNEL_TAG -> UAirship.shared().channel.editTagGroups()
         }
         tags.toStringList().forEach {
@@ -151,7 +278,7 @@ class AirshipInstance : AirshipCommand {
 
     override fun removeTagGroup(group: String, tags: JSONArray, type: AirshipConstants.TagType) {
         val editor: TagGroupsEditor = when (type) {
-            AirshipConstants.TagType.NAMED_USER_TAG -> UAirship.shared().namedUser.editTagGroups()
+            AirshipConstants.TagType.NAMED_USER_TAG -> UAirship.shared().contact.editTagGroups()
             AirshipConstants.TagType.CHANNEL_TAG -> UAirship.shared().channel.editTagGroups()
         }
         tags.toStringList().forEach {
@@ -187,7 +314,7 @@ class AirshipInstance : AirshipCommand {
     }
 
     override fun identifyUser(id: String) {
-        UAirship.shared().namedUser.id = id
+        UAirship.shared().contact.identify(id)
     }
 
     override fun enablePushNotifications(options: JSONArray?, channelId: String?) {
@@ -224,7 +351,7 @@ class AirshipInstance : AirshipCommand {
                 }
                 for (i in 0 until options.length()) {
                     options.optString(i)?.let { opt ->
-                        when (opt.toLowerCase(Locale.ROOT)) {
+                        when (opt.lowercase(Locale.ROOT)) {
                             "light" -> notificationChannel.enableLights(true)
                             "badge" -> notificationChannel.showBadge = true
                             "vibrate" -> notificationChannel.enableVibration(true)
@@ -313,48 +440,24 @@ class AirshipInstance : AirshipCommand {
             value?.let {
                 if (it) {
                     UAirship.shared().privacyManager.enable(
-                        PrivacyManager.FEATURE_ANALYTICS
+                        PrivacyManager.Feature.ANALYTICS
                     )
                 } else {
                     UAirship.shared().privacyManager.disable(
-                        PrivacyManager.FEATURE_ANALYTICS
+                        PrivacyManager.Feature.ANALYTICS
                     )
                 }
             }
         }
 
-    override var locationEnabled: Boolean?
-        get() = AirshipLocationManager.shared().isLocationUpdatesEnabled
-        set(value) {
-            value?.let {
-                AirshipLocationManager.shared().isLocationUpdatesEnabled = it
-            }
-        }
-
-    override var backgroundLocationEnabled: Boolean?
-        get() = AirshipLocationManager.shared().isBackgroundLocationAllowed
-        set(value) {
-            value?.let {
-                AirshipLocationManager.shared().isBackgroundLocationAllowed = it
-            }
-        }
-
-    override var dataCollectionEnabled: Boolean?
-        get() = UAirship.shared().isDataCollectionEnabled
-        set(value) {
-            value?.let {
-                UAirship.shared().isDataCollectionEnabled = it
-            }
-        }
-
     override var inAppMessagingEnabled: Boolean?
-        get() = UAirship.shared().privacyManager.isEnabled(PrivacyManager.FEATURE_IN_APP_AUTOMATION)
+        get() = UAirship.shared().privacyManager.isEnabled(PrivacyManager.Feature.IN_APP_AUTOMATION)
         set(value) {
             value?.let {
                 if (it) {
-                    UAirship.shared().privacyManager.enable(PrivacyManager.FEATURE_IN_APP_AUTOMATION)
+                    UAirship.shared().privacyManager.enable(PrivacyManager.Feature.IN_APP_AUTOMATION)
                 } else {
-                    UAirship.shared().privacyManager.disable(PrivacyManager.FEATURE_IN_APP_AUTOMATION)
+                    UAirship.shared().privacyManager.disable(PrivacyManager.Feature.IN_APP_AUTOMATION)
                 }
             }
         }
@@ -368,13 +471,10 @@ class AirshipInstance : AirshipCommand {
         }
 
     override var inAppMessagingDisplayInterval: Long?
-        get() = InAppAutomation.shared().inAppMessageManager.displayInterval
+        get() = InAppAutomation.shared().inAppMessaging.displayInterval
         set(value) {
             value?.let {
-                InAppAutomation.shared().inAppMessageManager.setDisplayInterval(
-                    it,
-                    TimeUnit.SECONDS
-                )
+                InAppAutomation.shared().inAppMessaging.displayInterval = it
             }
         }
 

@@ -4,19 +4,15 @@ plugins {
     id 'maven-publish'
 }
 
-version = tealium_airship_version
-
 android {
-    compileSdkVersion 32
-    buildToolsVersion "30.0.3"
+    namespace = "com.tealium.remotecommands.airship"
+    compileSdk 35
 
     defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 32
-        versionCode 1
-        versionName "1.0"
+        minSdkVersion 23
+        targetSdkVersion 35
 
-        buildConfigField 'String', 'TAG', "\"TealiumAirship-$version\""
+        buildConfigField 'String', 'TAG', "\"TealiumAirship-$tealium_airship_version\""
         buildConfigField 'String', "TEALIUM_AIRSHIP_VERSION", "\"$tealium_airship_version\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -29,22 +25,34 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
+
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = JavaVersion.VERSION_11
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
     }
 }
 
 dependencies {
 
     // Tealium
-    api "com.tealium:remotecommands:1.0.1"
+    api "com.tealium:remotecommands:1.0.3"
 
     // Airship
-    api "com.urbanairship.android:urbanairship-location:$airship_version"
     // In-App Messaging
     api "com.urbanairship.android:urbanairship-automation:$airship_version"
     // Message Center
@@ -52,34 +60,36 @@ dependencies {
 
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation 'androidx.core:core-ktx:1.7.0'
-    implementation 'androidx.appcompat:appcompat:1.4.1'
-    implementation 'com.google.android.material:material:1.6.0'
-    testImplementation 'junit:junit:4.+'
-    testImplementation "org.robolectric:robolectric:4.6.1"
-    testImplementation 'io.mockk:mockk:1.12.0'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+    implementation 'androidx.core:core-ktx:1.16.0'
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'com.google.android.material:material:1.12.0'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation "org.robolectric:robolectric:4.16"
+    testImplementation 'io.mockk:mockk:1.14.5'
+    androidTestImplementation 'androidx.test.ext:junit:1.3.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
 }
 
-afterEvaluate {
-    publishing {
-        publications {
-            mavenJava(MavenPublication) {
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId 'com.tealium.remotecommands'
+            artifactId 'airship'
+            version "$tealium_airship_version"
+            afterEvaluate {
                 from components.release
-                groupId 'com.tealium.remotecommands'
-                artifactId 'airship'
-            }
-        }
-        repositories {
-            maven {
-//            url "s3://maven.tealiumiq.com/android/releases/"
-//            credentials(AwsCredentials) {
-//                accessKey AWS_ACCESS_KEY
-//                secretKey AWS_SECRET_KEY
-//                sessionToken AWS_SESSION_TOKEN
-//            }
             }
         }
     }
+    // repositories {
+    //     maven {
+    //         url "s3://maven.tealiumiq.com/android/releases/"
+    //         credentials(AwsCredentials) {
+    //             // Dummy credentials provided in project's gradle.properties; these will be overridden by your global settings in ~/.gradle/gradle.properties
+    //             accessKey AWS_ACCESS_KEY
+    //             secretKey AWS_SECRET_KEY
+    //             sessionToken AWS_SESSION_TOKEN
+    //         }
+    //     }
+    // }
 }

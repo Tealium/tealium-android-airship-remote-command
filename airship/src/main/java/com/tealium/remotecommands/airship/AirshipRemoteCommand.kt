@@ -177,18 +177,6 @@ class AirshipRemoteCommand(
                     AirshipConstants.Commands.DISABLE_QUIET_TIME -> {
                         airshipCommand.quietTimeEnabled = false
                     }
-                    AirshipConstants.Commands.ENABLE_LOCATION -> {
-                        airshipCommand.locationEnabled = true
-                    }
-                    AirshipConstants.Commands.DISABLE_LOCATION -> {
-                        airshipCommand.locationEnabled = false
-                    }
-                    AirshipConstants.Commands.ENABLE_BACKGROUND_LOCATION -> {
-                        airshipCommand.backgroundLocationEnabled = true
-                    }
-                    AirshipConstants.Commands.DISABLE_BACKGROUND_LOCATION -> {
-                        airshipCommand.backgroundLocationEnabled = false
-                    }
                     AirshipConstants.Commands.DISPLAY_MESSAGE_CENTER -> {
                         val messageId: String? = payload.optString(AirshipConstants.Keys.MESSAGE_ID).let {
                             if (it.isEmpty()) null else it

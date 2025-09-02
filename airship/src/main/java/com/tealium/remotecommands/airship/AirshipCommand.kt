@@ -17,7 +17,6 @@ interface AirshipCommand {
     fun identifyUser(id: String)
     fun enablePushNotifications(options: JSONArray?, channelId: String?)
     var userPushNotificationsEnabled: Boolean?
-
     fun setPushNotificationOptions(options: JSONArray, channelId: String?)
     var quietTimeEnabled: Boolean?
     fun setQuietTimeStartHour(hour: Int, minute: Int, endHour: Int, endMinute: Int)
@@ -26,9 +25,6 @@ interface AirshipCommand {
     fun trackScreenView(screenName: String)
     fun trackEvent(eventName: String, value: Double?, eventProperties: JSONObject?)
     var analyticsEnabled: Boolean?
-    var locationEnabled: Boolean?
-    var backgroundLocationEnabled: Boolean?
-    var dataCollectionEnabled: Boolean?
     var inAppMessagingEnabled: Boolean?
     var inAppMessagingPaused: Boolean?
     var inAppMessagingDisplayInterval: Long?
