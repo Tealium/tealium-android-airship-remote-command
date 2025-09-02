@@ -15,7 +15,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [21, 28])
+@Config(sdk = [23, 35])
 class AirshipRemoteCommandTests {
 
     @RelaxedMockK
@@ -432,10 +432,8 @@ class AirshipRemoteCommandTests {
     fun onInvoke_Enable_Calls_EnableTrue() {
         payload.put(AirshipConstants.COMMAND_NAME, arrayOf(
             AirshipConstants.Commands.ENABLE_ANALYTICS,
-            AirshipConstants.Commands.ENABLE_BACKGROUND_LOCATION,
             AirshipConstants.Commands.ENABLE_IN_APP_MESSAGING,
             AirshipConstants.Commands.PAUSE_IN_APP_MESSAGING,
-            AirshipConstants.Commands.ENABLE_LOCATION,
             AirshipConstants.Commands.ENABLE_QUIET_TIME,
             ).joinToString(AirshipConstants.SEPARATOR)
         )
@@ -447,7 +445,6 @@ class AirshipRemoteCommandTests {
             mockCommand.inAppMessagingEnabled = true
             mockCommand.inAppMessagingPaused = true
             mockCommand.quietTimeEnabled = true
-            mockCommand.locationEnabled = true
         }
     }
 
@@ -455,10 +452,8 @@ class AirshipRemoteCommandTests {
     fun onInvoke_Disable_Calls_EnableFalse() {
         payload.put(AirshipConstants.COMMAND_NAME, arrayOf(
             AirshipConstants.Commands.DISABLE_ANALYTICS,
-            AirshipConstants.Commands.DISABLE_BACKGROUND_LOCATION,
             AirshipConstants.Commands.DISABLE_IN_APP_MESSAGING,
             AirshipConstants.Commands.UNPAUSE_IN_APP_MESSAGING,
-            AirshipConstants.Commands.DISABLE_LOCATION,
             AirshipConstants.Commands.DISABLE_QUIET_TIME,
             AirshipConstants.Commands.DISABLE_USER_PUSH_NOTIFICATIONS,
         ).joinToString(AirshipConstants.SEPARATOR)
@@ -472,7 +467,6 @@ class AirshipRemoteCommandTests {
             mockCommand.inAppMessagingPaused = false
             mockCommand.userPushNotificationsEnabled = false
             mockCommand.quietTimeEnabled = false
-            mockCommand.locationEnabled = false
         }
     }
 
@@ -486,6 +480,54 @@ class AirshipRemoteCommandTests {
 
         verify {
             mockCommand.enableAdvertisingIDs("my_id", true)
+        }
+    }
+
+    @Test
+    fun onInvoke_DisplayMessageCenter_Calls_DisplayMessageCenter() {
+        payload.put(AirshipConstants.COMMAND_NAME, AirshipConstants.Commands.DISPLAY_MESSAGE_CENTER)
+        payload.put(AirshipConstants.Keys.MESSAGE_ID, "message_123")
+
+        airshipRemoteCommand.onInvoke(mockResponse)
+
+        verify {
+            mockCommand.displayMessageCenter("message_123")
+        }
+    }
+
+    @Test
+    fun onInvoke_DisplayMessageCenter_Calls_DisplayMessageCenter_WithoutMessageId() {
+        payload.put(AirshipConstants.COMMAND_NAME, AirshipConstants.Commands.DISPLAY_MESSAGE_CENTER)
+
+        airshipRemoteCommand.onInvoke(mockResponse)
+
+        verify {
+            mockCommand.displayMessageCenter(null)
+        }
+    }
+
+    @Test
+    fun onInvoke_EnableUserPushNotifications_Calls_EnablePushNotifications() {
+        payload.put(AirshipConstants.COMMAND_NAME, AirshipConstants.Commands.ENABLE_USER_PUSH_NOTIFICATIONS)
+        val options = JSONArray(arrayOf("badge", "sound", "alert"))
+        payload.put(AirshipConstants.Keys.PUSH_NOTIFICATION_OPTIONS, options)
+        payload.put(AirshipConstants.Keys.CHANNEL_ID, "test_channel")
+
+        airshipRemoteCommand.onInvoke(mockResponse)
+
+        verify {
+            mockCommand.enablePushNotifications(options, "test_channel")
+        }
+    }
+
+    @Test
+    fun onInvoke_EnableUserPushNotifications_Calls_EnablePushNotifications_WithoutOptions() {
+        payload.put(AirshipConstants.COMMAND_NAME, AirshipConstants.Commands.ENABLE_USER_PUSH_NOTIFICATIONS)
+
+        airshipRemoteCommand.onInvoke(mockResponse)
+
+        verify {
+            mockCommand.enablePushNotifications(null, "")
         }
     }
 }

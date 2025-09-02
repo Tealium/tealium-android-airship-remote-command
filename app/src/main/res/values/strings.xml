@@ -14,7 +14,6 @@
     <string name="analytics_enabled">Analytics</string>
     <string name="enabled">Enabled</string>
     <string name="disabled">Disabled</string>
-    <string name="location_enabled">Location</string>
     <string name="messaging">Messaging</string>
     <string name="push_enabled">Push</string>
     <string name="back">Back</string>

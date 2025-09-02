@@ -44,43 +44,7 @@
             android:text="@string/disabled" />
     </RadioGroup>
 
-    <TextView
-        android:id="@+id/textView_location"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/location_enabled"
-        android:textSize="18sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.233"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView_analytics"
-        app:layout_constraintVertical_bias="0.056" />
 
-    <RadioGroup
-        android:id="@+id/radioGroup_location"
-        android:layout_width="204dp"
-        android:layout_height="54dp"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toEndOf="@+id/textView_location"
-        app:layout_constraintTop_toBottomOf="@+id/radioGroup_analytics"
-        app:layout_constraintVertical_bias="0.0">
-
-        <RadioButton
-            android:id="@+id/location_enabled"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:text="@string/enabled" />
-
-        <RadioButton
-            android:id="@+id/location_disabled"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:text="@string/disabled" />
-    </RadioGroup>
 
     <TextView
         android:id="@+id/textView_messaging"
@@ -92,7 +56,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.191"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView_location"
+        app:layout_constraintTop_toBottomOf="@+id/textView_analytics"
         app:layout_constraintVertical_bias="0.051" />
 
     <RadioGroup
@@ -104,7 +68,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toEndOf="@+id/textView_messaging"
-        app:layout_constraintTop_toBottomOf="@+id/radioGroup_location"
+        app:layout_constraintTop_toBottomOf="@+id/radioGroup_analytics"
         app:layout_constraintVertical_bias="0.0">
 
         <RadioButton

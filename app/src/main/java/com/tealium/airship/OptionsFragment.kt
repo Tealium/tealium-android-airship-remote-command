@@ -8,7 +8,6 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.RadioButton
 import android.widget.RadioGroup
-import androidx.core.util.toAndroidPair
 import androidx.navigation.fragment.findNavController
 import com.urbanairship.PrivacyManager
 import com.urbanairship.UAirship
@@ -37,7 +36,6 @@ class OptionsFragment : Fragment(), RadioGroup.OnCheckedChangeListener {
 
         listOf(
             R.id.radioGroup_analytics,
-            R.id.radioGroup_location,
             R.id.radioGroup_messaging,
             R.id.radioGroup_push
         ).forEach {
@@ -48,16 +46,10 @@ class OptionsFragment : Fragment(), RadioGroup.OnCheckedChangeListener {
 
     fun setupRadioButtons() {
         val privacyManager = UAirship.shared().privacyManager
-        val locationEnabled = privacyManager.isEnabled(PrivacyManager.FEATURE_LOCATION)
-        val analyticsEnabled = privacyManager.isEnabled(PrivacyManager.FEATURE_ANALYTICS)
-        val messagingEnabled = privacyManager.isEnabled(PrivacyManager.FEATURE_MESSAGE_CENTER)
-        val pushEnabled = privacyManager.isEnabled(PrivacyManager.FEATURE_PUSH)
+        val analyticsEnabled = privacyManager.isEnabled(PrivacyManager.Feature.ANALYTICS)
+        val messagingEnabled = privacyManager.isEnabled(PrivacyManager.Feature.MESSAGE_CENTER)
+        val pushEnabled = privacyManager.isEnabled(PrivacyManager.Feature.PUSH)
 
-        if (locationEnabled) {
-            check(R.id.location_enabled)
-        } else {
-            check(R.id.location_disabled)
-        }
         if (analyticsEnabled) {
             check(R.id.analytics_enabled)
         } else {
@@ -94,8 +86,6 @@ class OptionsFragment : Fragment(), RadioGroup.OnCheckedChangeListener {
             return when (it.id) {
                 R.id.analytics_enabled -> Pair("enable_analytics", null)
                 R.id.analytics_disabled -> Pair("disable_analytics", null)
-                R.id.location_enabled -> Pair("enable_location", null)
-                R.id.location_disabled -> Pair("disable_location", null)
                 R.id.messaging_enabled -> Pair("enable_messaging", null)
                 R.id.messaging_disabled -> Pair("disable_messaging", null)
                 R.id.push_enabled -> Pair("enable_push", mapOf(

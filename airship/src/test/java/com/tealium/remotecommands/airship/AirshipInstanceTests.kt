@@ -11,11 +11,9 @@ import com.urbanairship.analytics.CustomEvent
 import com.urbanairship.automation.InAppAutomation
 import com.urbanairship.channel.AirshipChannel
 import com.urbanairship.channel.AttributeEditor
-import com.urbanairship.channel.NamedUser
 import com.urbanairship.channel.TagGroupsEditor
-import com.urbanairship.iam.InAppMessageManager
+import com.urbanairship.contacts.Contact
 import com.urbanairship.json.JsonValue
-import com.urbanairship.location.AirshipLocationManager
 import com.urbanairship.messagecenter.MessageCenter
 import com.urbanairship.push.PushManager
 import io.mockk.*
@@ -33,7 +31,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [21, 28])
+@Config(sdk = [23, 35])
 class AirshipInstanceTests {
 
     @RelaxedMockK
@@ -83,7 +81,7 @@ class AirshipInstanceTests {
         assertEquals("prod_secret", airshipConfig.appSecret)
         assertTrue(airshipConfig.inProduction)
         assertTrue(airshipConfig.analyticsEnabled)
-        assertEquals(PrivacyManager.FEATURE_ALL, airshipConfig.enabledFeatures)
+        assertEquals(PrivacyManager.Feature.ALL, airshipConfig.enabledFeatures)
         assertTrue(airshipConfig.analyticsEnabled)
     }
 
@@ -108,7 +106,7 @@ class AirshipInstanceTests {
         assertEquals("dev_secret", airshipConfig.appSecret)
         assertFalse(airshipConfig.inProduction)
         assertTrue(airshipConfig.analyticsEnabled)
-        assertEquals(PrivacyManager.FEATURE_ALL, airshipConfig.enabledFeatures)
+        assertEquals(PrivacyManager.Feature.ALL, airshipConfig.enabledFeatures)
         assertTrue(airshipConfig.analyticsEnabled)
     }
 
@@ -124,13 +122,20 @@ class AirshipInstanceTests {
         assertEquals(Log.WARN, level)
         level = airshipInstance.parseLogLevel("error")
         assertEquals(Log.ERROR, level)
-        level = airshipInstance.parseLogLevel("invalid")
-        assertEquals(Log.ERROR, level)
         level = airshipInstance.parseLogLevel("none")
         assertEquals(Int.MAX_VALUE, level)
 
+        // Test case-insensitive parsing
         level = airshipInstance.parseLogLevel("DEbug")
         assertEquals(Log.DEBUG, level)
+
+        // Test invalid input returns null
+        level = airshipInstance.parseLogLevel("invalid")
+        assertNull(level)
+        level = airshipInstance.parseLogLevel("")
+        assertNull(level)
+        level = airshipInstance.parseLogLevel("unknown")
+        assertNull(level)
     }
 
     @Test
@@ -202,10 +207,10 @@ class AirshipInstanceTests {
 
     @Test
     fun addTagGroup_AddsUserTagGroups() {
-        val mockNamedUser: NamedUser = mockk(relaxed = true)
-        every { mockUAirship.namedUser } returns mockNamedUser
+        val mockContact = mockk<Contact>(relaxed = true)
+        every { mockUAirship.contact } returns mockContact
         val mockEditor: TagGroupsEditor = mockk(relaxed = true)
-        every { mockNamedUser.editTagGroups() } returns mockEditor
+        every { mockContact.editTagGroups() } returns mockEditor
 
         airshipInstance.addTagGroup("group", JSONArray().apply {
             put("tag1")
@@ -238,10 +243,10 @@ class AirshipInstanceTests {
 
     @Test
     fun removeTagGroup_RemovesUserTagGroups() {
-        val mockNamedUser: NamedUser = mockk(relaxed = true)
-        every { mockUAirship.namedUser } returns mockNamedUser
+        val mockContact = mockk<Contact>(relaxed = true)
+        every { mockUAirship.contact } returns mockContact
         val mockEditor: TagGroupsEditor = mockk(relaxed = true)
-        every { mockNamedUser.editTagGroups() } returns mockEditor
+        every { mockContact.editTagGroups() } returns mockEditor
 
         airshipInstance.removeTagGroup("group", JSONArray().apply {
             put("tag1")
@@ -274,12 +279,13 @@ class AirshipInstanceTests {
 
     @Test
     fun identifyUser_SetsUserId() {
-        val mockNamedUser: NamedUser = mockk(relaxed = true)
-        every { mockUAirship.namedUser } returns mockNamedUser
+        val mockContact = mockk<Contact>(relaxed = true)
+        every { mockUAirship.contact } returns mockContact
+        
         airshipInstance.identifyUser("user_1234")
 
         verify {
-            mockNamedUser.id = "user_1234"
+            mockContact.identify("user_1234")
         }
     }
 
@@ -293,7 +299,6 @@ class AirshipInstanceTests {
         verify {
             mockPushManager.userNotificationsEnabled = true
         }
-        // TODO("options possibly incomplete")
     }
 
     @Test
@@ -407,77 +412,7 @@ class AirshipInstanceTests {
         airshipInstance.analyticsEnabled = true
 
         verify {
-            mockPrivacyManager.enable(PrivacyManager.FEATURE_ANALYTICS)
-        }
-    }
-
-    @Test
-    fun locationEnabled_GetsEnabled() {
-        val mockAirshipLocationManager: AirshipLocationManager = mockk(relaxed = true)
-        mockkStatic(AirshipLocationManager::class)
-        every { AirshipLocationManager.shared() } returns mockAirshipLocationManager
-
-        val enabled = airshipInstance.locationEnabled
-
-        verify {
-            mockAirshipLocationManager.isLocationUpdatesEnabled
-        }
-    }
-
-    @Test
-    fun locationEnabled_SetsEnabled() {
-        val mockAirshipLocationManager: AirshipLocationManager = mockk(relaxed = true)
-        mockkStatic(AirshipLocationManager::class)
-        every { AirshipLocationManager.shared() } returns mockAirshipLocationManager
-
-        airshipInstance.locationEnabled = true
-
-        verify {
-            mockAirshipLocationManager.isLocationUpdatesEnabled = true
-        }
-    }
-
-    @Test
-    fun backgroundLocationEnabled_GetsEnabled() {
-        val mockAirshipLocationManager: AirshipLocationManager = mockk(relaxed = true)
-        mockkStatic(AirshipLocationManager::class)
-        every { AirshipLocationManager.shared() } returns mockAirshipLocationManager
-
-        val enabled = airshipInstance.backgroundLocationEnabled
-
-        verify {
-            mockAirshipLocationManager.isBackgroundLocationAllowed
-        }
-    }
-
-    @Test
-    fun backgroundLocationEnabled_SetsEnabled() {
-        val mockAirshipLocationManager: AirshipLocationManager = mockk(relaxed = true)
-        mockkStatic(AirshipLocationManager::class)
-        every { AirshipLocationManager.shared() } returns mockAirshipLocationManager
-
-        airshipInstance.backgroundLocationEnabled = true
-
-        verify {
-            mockAirshipLocationManager.isBackgroundLocationAllowed = true
-        }
-    }
-
-    @Test
-    fun dataCollectionEnabled_GetsEnabled() {
-        val enabled = airshipInstance.dataCollectionEnabled
-
-        verify {
-            mockUAirship.isDataCollectionEnabled
-        }
-    }
-
-    @Test
-    fun dataCollectionEnabled_SetsEnabled() {
-        airshipInstance.dataCollectionEnabled = true
-
-        verify {
-            mockUAirship.isDataCollectionEnabled = true
+            mockPrivacyManager.enable(PrivacyManager.Feature.ANALYTICS)
         }
     }
 
@@ -486,7 +421,7 @@ class AirshipInstanceTests {
         val enabled = airshipInstance.inAppMessagingEnabled
 
         verify {
-            mockPrivacyManager.isEnabled(PrivacyManager.FEATURE_IN_APP_AUTOMATION)
+            mockPrivacyManager.isEnabled(PrivacyManager.Feature.IN_APP_AUTOMATION)
         }
     }
 
@@ -495,7 +430,7 @@ class AirshipInstanceTests {
         airshipInstance.inAppMessagingEnabled = true
 
         verify {
-            mockPrivacyManager.enable(PrivacyManager.FEATURE_IN_APP_AUTOMATION)
+            mockPrivacyManager.enable(PrivacyManager.Feature.IN_APP_AUTOMATION)
         }
     }
 
@@ -522,36 +457,6 @@ class AirshipInstanceTests {
 
         verify {
             mockInAppAutomation.isPaused = true
-        }
-    }
-
-    @Test
-    fun inAppMessagingDisplayInterval_GetsInterval() {
-        val mockInAppAutomation: InAppAutomation = mockk(relaxed = true)
-        val mockInAppMessageManager: InAppMessageManager = mockk(relaxed = true)
-        mockkStatic(InAppAutomation::class)
-        every { InAppAutomation.shared() } returns mockInAppAutomation
-        every { mockInAppAutomation.inAppMessageManager } returns mockInAppMessageManager
-
-        val interval = airshipInstance.inAppMessagingDisplayInterval
-
-        verify {
-            mockInAppMessageManager.displayInterval
-        }
-    }
-
-    @Test
-    fun inAppMessagingDisplayInterval_SetsInterval() {
-        val mockInAppAutomation: InAppAutomation = mockk(relaxed = true)
-        val mockInAppMessageManager: InAppMessageManager = mockk(relaxed = true)
-        mockkStatic(InAppAutomation::class)
-        every { InAppAutomation.shared() } returns mockInAppAutomation
-        every { mockInAppAutomation.inAppMessageManager } returns mockInAppMessageManager
-
-        airshipInstance.inAppMessagingDisplayInterval = 100
-
-        verify {
-            mockInAppMessageManager.setDisplayInterval(100, TimeUnit.SECONDS)
         }
     }
 
@@ -599,5 +504,256 @@ class AirshipInstanceTests {
             mockEditor.setAttribute("long_key", Long.MAX_VALUE)
             mockEditor.apply()
         }
+    }
+
+    @Test
+    fun parseOptions_SetsChannelCreationDelayEnabled() {
+        config.put(AirshipConstants.Config.CHANNEL_CREATION_DELAY_ENABLED, true)
+        
+        val airshipConfig: AirshipConfigOptions = airshipInstance.parseOptions(config)
+        
+        assertTrue(airshipConfig.channelCreationDelayEnabled)
+    }
+
+    @Test
+    fun parseOptions_SetsAllowedTransports() {
+        val transports = JSONArray().apply {
+            put("FCM")
+            put("ADM")
+            put("HMS")
+        }
+        config.put(AirshipConstants.Config.ALLOWED_TRANSPORTS, transports)
+        
+        val airshipConfig: AirshipConfigOptions = airshipInstance.parseOptions(config)
+        
+        assertEquals(listOf("FCM", "ADM", "HMS"), airshipConfig.allowedTransports)
+    }
+
+    @Test
+    fun parseOptions_SetsAppStoreUri() {
+        config.put(AirshipConstants.Config.APP_STORE_URI, "market://details?id=com.example.app")
+        
+        val airshipConfig: AirshipConfigOptions = airshipInstance.parseOptions(config)
+        
+        assertEquals("market://details?id=com.example.app", airshipConfig.appStoreUri.toString())
+    }
+
+    @Test
+    fun parseOptions_SetsAutoPauseInAppAutomationOnLaunch() {
+        config.put(AirshipConstants.Config.AUTO_PAUSE_IN_APP_AUTOMATION_ON_LAUNCH, true)
+        
+        val airshipConfig: AirshipConfigOptions = airshipInstance.parseOptions(config)
+        
+        assertTrue(airshipConfig.autoPauseInAppAutomationOnLaunch)
+    }
+
+    @Test
+    fun parseOptions_SetsBackgroundReportingIntervalMS() {
+        config.put(AirshipConstants.Config.BACKGROUND_REPORTING_INTERVAL_MS, 60000L)
+        
+        val airshipConfig: AirshipConfigOptions = airshipInstance.parseOptions(config)
+        
+        assertEquals(60000L, airshipConfig.backgroundReportingIntervalMS)
+    }
+
+    @Test
+    fun parseOptions_SetsChannelCaptureEnabled() {
+        config.put(AirshipConstants.Config.CHANNEL_CAPTURE_ENABLED, true)
+        
+        val airshipConfig: AirshipConfigOptions = airshipInstance.parseOptions(config)
+        
+        assertTrue(airshipConfig.channelCaptureEnabled)
+    }
+
+    @Test
+    fun parseOptions_SetsExtendedBroadcastsEnabled() {
+        config.put(AirshipConstants.Config.EXTENDED_BROADCASTS_ENABLED, true)
+        
+        val airshipConfig: AirshipConfigOptions = airshipInstance.parseOptions(config)
+        
+        assertTrue(airshipConfig.extendedBroadcastsEnabled)
+    }
+
+    @Test
+    fun parseOptions_SetsFcmFirebaseAppName() {
+        config.put(AirshipConstants.Config.FCM_FIREBASE_APP_NAME, "custom-firebase-app")
+        
+        val airshipConfig: AirshipConfigOptions = airshipInstance.parseOptions(config)
+        
+        assertEquals("custom-firebase-app", airshipConfig.fcmFirebaseAppName)
+    }
+
+    @Test
+    fun parseOptions_SetsInitialConfigUrl() {
+        config.put(AirshipConstants.Config.INITIAL_CONFIG_URL, "https://custom-domain.com/config")
+        
+        val airshipConfig: AirshipConfigOptions = airshipInstance.parseOptions(config)
+        
+        assertEquals("https://custom-domain.com/config", airshipConfig.initialConfigUrl)
+    }
+
+    @Test
+    fun parseOptions_SetsRequireInitialRemoteConfigEnabled() {
+        config.put(AirshipConstants.Config.REQUIRE_INITIAL_REMOTE_CONFIG_ENABLED, true)
+        
+        val airshipConfig: AirshipConfigOptions = airshipInstance.parseOptions(config)
+        
+        assertTrue(airshipConfig.requireInitialRemoteConfigEnabled)
+    }
+
+    @Test
+    fun parseOptions_SetsLogLevel() {
+        config.put(AirshipConstants.Config.LOG_LEVEL, "info")
+        
+        val airshipConfig: AirshipConfigOptions = airshipInstance.parseOptions(config)
+        
+        assertEquals(Log.INFO, airshipConfig.logLevel)
+    }
+
+    @Test
+    fun parseOptions_SetsUrlAllowLists() {
+        val urlAllowList = JSONArray().apply {
+            put("https://example.com/*")
+            put("https://trusted.com/*")
+        }
+        val jsInterfaceList = JSONArray().apply {
+            put("https://api.company.com/*")
+        }
+        val openUrlList = JSONArray().apply {
+            put("https://support.company.com/*")
+        }
+        
+        config.put(AirshipConstants.Config.URL_ALLOW_LIST, urlAllowList)
+        config.put(AirshipConstants.Config.URL_ALLOW_LIST_SCOPE_JAVASCRIPT_INTERFACE, jsInterfaceList)
+        config.put(AirshipConstants.Config.URL_ALLOW_LIST_SCOPE_OPEN_URL, openUrlList)
+        
+        val airshipConfig: AirshipConfigOptions = airshipInstance.parseOptions(config)
+        
+        assertEquals(listOf("https://example.com/*", "https://trusted.com/*"), airshipConfig.urlAllowList)
+        assertEquals(listOf("https://api.company.com/*"), airshipConfig.urlAllowListScopeJavaScriptInterface)
+        assertEquals(listOf("https://support.company.com/*"), airshipConfig.urlAllowListScopeOpenUrl)
+    }
+
+    @Test
+    fun parseOptions_SetsEnabledFeatures() {
+        val features = JSONArray().apply {
+            put("ANALYTICS")
+            put("PUSH")
+            put("IN_APP_AUTOMATION")
+        }
+        config.put(AirshipConstants.Config.ENABLED_FEATURES, features)
+        
+        val airshipConfig: AirshipConfigOptions = airshipInstance.parseOptions(config)
+        
+        // Verify that the enabled features were set correctly
+        val enabledFeatures = airshipConfig.enabledFeatures
+        assertEquals(3, enabledFeatures.size)
+        assertTrue(enabledFeatures.contains(PrivacyManager.Feature.ANALYTICS))
+        assertTrue(enabledFeatures.contains(PrivacyManager.Feature.PUSH))
+        assertTrue(enabledFeatures.contains(PrivacyManager.Feature.IN_APP_AUTOMATION))
+    }
+
+    @Test 
+    fun parseOptions_HandlesMissingLogLevelGracefully() {
+        config.put(AirshipConstants.Config.LOG_LEVEL, "invalid_level")
+        
+        val airshipConfig: AirshipConfigOptions = airshipInstance.parseOptions(config)
+        
+        // Should default to ERROR when invalid level is provided
+        assertEquals(Log.ERROR, airshipConfig.logLevel)
+    }
+
+    @Test
+    fun privacyFeatures_fromJsonArray_HandlesALL() {
+        val featuresArray = JSONArray().apply {
+            put("ALL")
+        }
+        
+        val result = AirshipConstants.PrivacyFeatures.fromJsonArray(featuresArray)
+        
+        assertEquals(1, result.size)
+        assertEquals(PrivacyManager.Feature.ALL, result[0])
+    }
+
+    @Test
+    fun privacyFeatures_fromJsonArray_HandlesNONE() {
+        val featuresArray = JSONArray().apply {
+            put("NONE")
+        }
+        
+        val result = AirshipConstants.PrivacyFeatures.fromJsonArray(featuresArray)
+        
+        assertEquals(1, result.size)
+        assertEquals(PrivacyManager.Feature.NONE, result[0])
+    }
+
+    @Test
+    fun privacyFeatures_fromJsonArray_HandlesMultipleFeatures() {
+        val featuresArray = JSONArray().apply {
+            put("ANALYTICS")
+            put("PUSH")
+            put("IN_APP_AUTOMATION")
+            put("MESSAGE_CENTER")
+        }
+        
+        val result = AirshipConstants.PrivacyFeatures.fromJsonArray(featuresArray)
+        
+        assertEquals(4, result.size)
+        assertTrue(result.contains(PrivacyManager.Feature.ANALYTICS))
+        assertTrue(result.contains(PrivacyManager.Feature.PUSH))
+        assertTrue(result.contains(PrivacyManager.Feature.IN_APP_AUTOMATION))
+        assertTrue(result.contains(PrivacyManager.Feature.MESSAGE_CENTER))
+    }
+
+    @Test
+    fun privacyFeatures_fromJsonArray_IgnoresInvalidFeatures() {
+        val featuresArray = JSONArray().apply {
+            put("ANALYTICS")
+            put("INVALID_FEATURE")
+            put("PUSH")
+            put("")
+        }
+        
+        val result = AirshipConstants.PrivacyFeatures.fromJsonArray(featuresArray)
+        
+        assertEquals(2, result.size)
+        assertTrue(result.contains(PrivacyManager.Feature.ANALYTICS))
+        assertTrue(result.contains(PrivacyManager.Feature.PUSH))
+    }
+
+    @Test
+    fun privacyFeatures_fromJsonArray_IsCaseInsensitive() {
+        val featuresArray = JSONArray().apply {
+            put("analytics")
+            put("Push")
+            put("IN_app_AUTOMATION")
+        }
+        
+        val result = AirshipConstants.PrivacyFeatures.fromJsonArray(featuresArray)
+        
+        assertEquals(3, result.size)
+        assertTrue(result.contains(PrivacyManager.Feature.ANALYTICS))
+        assertTrue(result.contains(PrivacyManager.Feature.PUSH))
+        assertTrue(result.contains(PrivacyManager.Feature.IN_APP_AUTOMATION))
+    }
+
+    @Test
+    fun privacyFeatures_fromString_ReturnsCorrectFeature() {
+        assertEquals(PrivacyManager.Feature.ANALYTICS, AirshipConstants.PrivacyFeatures.fromString("ANALYTICS"))
+        assertEquals(PrivacyManager.Feature.PUSH, AirshipConstants.PrivacyFeatures.fromString("PUSH"))
+        assertEquals(PrivacyManager.Feature.IN_APP_AUTOMATION, AirshipConstants.PrivacyFeatures.fromString("IN_APP_AUTOMATION"))
+        assertEquals(PrivacyManager.Feature.MESSAGE_CENTER, AirshipConstants.PrivacyFeatures.fromString("MESSAGE_CENTER"))
+        assertEquals(PrivacyManager.Feature.CONTACTS, AirshipConstants.PrivacyFeatures.fromString("CONTACTS"))
+        assertEquals(PrivacyManager.Feature.FEATURE_FLAGS, AirshipConstants.PrivacyFeatures.fromString("FEATURE_FLAGS"))
+        assertEquals(PrivacyManager.Feature.TAGS_AND_ATTRIBUTES, AirshipConstants.PrivacyFeatures.fromString("TAGS_AND_ATTRIBUTES"))
+        assertEquals(PrivacyManager.Feature.ALL, AirshipConstants.PrivacyFeatures.fromString("ALL"))
+        assertEquals(PrivacyManager.Feature.NONE, AirshipConstants.PrivacyFeatures.fromString("NONE"))
+    }
+
+    @Test
+    fun privacyFeatures_fromString_ReturnsNullForInvalid() {
+        assertNull(AirshipConstants.PrivacyFeatures.fromString("INVALID_FEATURE"))
+        assertNull(AirshipConstants.PrivacyFeatures.fromString(""))
+        assertNull(AirshipConstants.PrivacyFeatures.fromString("unknown"))
     }
 }
